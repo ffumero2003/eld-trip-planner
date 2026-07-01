@@ -52,7 +52,8 @@ def geocode(location_str):
 
 
 def get_leg(start_coords, end_coords):
-    # Given two [lon, lat] points, return (distance_miles, duration_minutes).
+    # Returns (distance_miles, duration_minutes, geometry) where geometry is
+    # the encoded polyline string ORS gives for the road path.
     if not ORS_API_KEY:
         raise RoutingError("ORS_API_KEY is not set")
 
@@ -73,4 +74,5 @@ def get_leg(start_coords, end_coords):
     summary = routes[0]["summary"]
     distance_miles = summary["distance"] / METERS_PER_MILE
     duration_minutes = summary["duration"] / SECONDS_PER_MINUTE
-    return distance_miles, duration_minutes
+    geometry = routes[0]["geometry"]   # encoded polyline of the road path
+    return distance_miles, duration_minutes, geometry

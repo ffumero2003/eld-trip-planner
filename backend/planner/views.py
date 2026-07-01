@@ -26,12 +26,10 @@ def day_to_dict(day):
 
 @api_view(["POST"])
 def plan_trip(request):
-    print(">>> plan_trip START", flush=True)
     current = request.data.get("current_location")
     pickup = request.data.get("pickup_location")
     dropoff = request.data.get("dropoff_location")
     current_cycle_hours = float(request.data.get("current_cycle_hours", 0))
-    print(">>> inputs parsed:", current, pickup, dropoff, flush=True)
 
     if not (current and pickup and dropoff):
         return Response(
@@ -41,18 +39,12 @@ def plan_trip(request):
 
     try:
         current_c = geocode(current)
-        print(">>> geocoded current", flush=True)
         pickup_c = geocode(pickup)
-        print(">>> geocoded pickup", flush=True)
         dropoff_c = geocode(dropoff)
-        print(">>> geocoded dropoff", flush=True)
 
-        leg1_miles, leg1_min = get_leg(current_c, pickup_c)
-        print(">>> leg1 done", flush=True)
-        leg2_miles, leg2_min = get_leg(pickup_c, dropoff_c)
-        print(">>> leg2 done", flush=True)
+        leg1_miles, leg1_min, leg1_geom = get_leg(current_c, pickup_c)
+        leg2_miles, leg2_min, leg2_geom = get_leg(pickup_c, dropoff_c)
     except RoutingError as e:
-        print(">>> RoutingError:", e, flush=True)
         return Response({"status": "error", "message": str(e)}, status=400)
 
     legs = [
@@ -62,9 +54,18 @@ def plan_trip(request):
 
     segments = simulate(legs, current_cycle_hours)
     days = build_days(segments, datetime(2026, 7, 1, 6, 0))
-    print(">>> engine done", flush=True)
+
+    # Stops the map should mark. ORS coords are [lon, lat]; Leaflet wants
+    # [lat, lon], so we flip them here at the boundary.
+    stops = [
+        {"label": "Current", "lat": current_c[1], "lon": current_c[0]},
+        {"label": "Pickup", "lat": pickup_c[1], "lon": pickup_c[0]},
+        {"label": "Dropoff", "lat": dropoff_c[1], "lon": dropoff_c[0]},
+    ]
 
     return Response({
         "status": "ok",
         "days": [day_to_dict(day) for day in days],
+        "route_geometry": [leg1_geom, leg2_geom],  # two encoded polylines
+        "stops": stops,
     })
