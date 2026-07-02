@@ -8,9 +8,10 @@ import AutocompleteInput from "./components/AutoCompleteInput";
 import { STOP_COLORS } from "./StopColors";
 import LogsModal from "./components/LogModal";
 
-// Where the Django backend lives in dev.
-const API_URL = "http://127.0.0.1:8000/api/plan/";
-const EXPLAIN_URL = "http://127.0.0.1:8000/api/explain/";
+// Backend base URL: Render in production, localhost in dev.
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = `${API_BASE}/api/plan/`;
+const EXPLAIN_URL = `${API_BASE}/api/explain/`;
 
 // Shared look for all form inputs (also used inside AutocompleteInput).
 export const INPUT_CLASSES =
